@@ -56,6 +56,7 @@ SELECT
      THEN 'International' END)             category,
   o.initials                               placeby,
   dc.DISCOUNT_COST
+
 FROM (SELECT *
       FROM orders o
       WHERE
@@ -66,9 +67,10 @@ FROM (SELECT *
   INNER JOIN (SELECT *
               FROM shipment s
               WHERE 1 = 1 AND (s.is_drop_ship = 0 OR s.is_drop_ship IS NULL) AND s.is_cancelled = 0 AND
-                    s.authorized IS NOT NULL AND s.SETTLED < date_trunc('month', current_date) AND
-                    s.SETTLED > TO_DATE('11/1/2016', 'MM/DD/YYYY') AND
+                    s.authorized IS NOT NULL AND s.SETTLED < date_trunc('month', current_date) AND s.tracking_num IS Null 
+                    AND s.SETTLED > TO_DATE('11/1/2016', 'MM/DD/YYYY') AND
                     (s.SHIPPED_DATE IS NULL OR s.SHIPPED_DATE >= date_trunc('month', current_date))) s
+                    
     ON s.order_id = o.order_id
   INNER JOIN order_shipment osh ON s.SHIPMENT_ID = osh.SHIPMENT_ID
   INNER JOIN order_sku os ON osh.ORDER_SKU_ID = OS.ORDER_SKU_ID
