@@ -1,9 +1,9 @@
-# MerchSNSReport
-Inventoried skus orders which settled from 11/1/2016 to last day of previous month (12168)
+
 SELECT
   o.order_id,
   o.date_created                        AS Order_date,
   s.shipment_number,
+    s.shipment_id,
   cc.cc_type,
   s.settled,
   (CASE WHEN SRC.ID = 16
@@ -14,6 +14,7 @@ SELECT
   SUM(CASE WHEN i.item_type_id IN (1, 2, NULL)
     THEN os.price * osh.quantity
       ELSE 0 END)                       AS SKUS,
+       dc.DISCOUNT_COST,
   SUM(CASE WHEN i.item_type_id IN (1, 2, NULL)
     THEN os.price * osh.quantity
       ELSE 0 END) * (d.percent / 100.0) AS DISCOUNT,
@@ -55,7 +56,7 @@ SELECT
    WHEN SRC.ID = 17
      THEN 'International' END)             category,
   o.initials                               placeby,
-  dc.DISCOUNT_COST
+  s.tracking_num
 
 FROM (SELECT *
       FROM orders o
@@ -67,9 +68,10 @@ FROM (SELECT *
   INNER JOIN (SELECT *
               FROM shipment s
               WHERE 1 = 1 AND (s.is_drop_ship = 0 OR s.is_drop_ship IS NULL) AND s.is_cancelled = 0 AND
-                    s.authorized IS NOT NULL AND s.SETTLED < date_trunc('month', current_date) AND s.tracking_num IS Null 
+                    s.authorized IS NOT NULL AND s.SETTLED < date_trunc('month', current_date)  
                     AND s.SETTLED > TO_DATE('11/1/2016', 'MM/DD/YYYY') AND
                     (s.SHIPPED_DATE IS NULL OR s.SHIPPED_DATE >= date_trunc('month', current_date))) s
+                    
                     
     ON s.order_id = o.order_id
   INNER JOIN order_shipment osh ON s.SHIPMENT_ID = osh.SHIPMENT_ID
@@ -94,7 +96,7 @@ FROM (SELECT *
                     sh.IS_CANCELLED = 0 AND sh.IS_HOLD = 0 AND sh.IS_TEMP_HOLD = 0 AND
                     sh.SETTLED < date_trunc('month', current_date) AND sh.SETTLED > TO_DATE('11/1/2016', 'MM/DD/YYYY')
               GROUP BY sh.SHIPMENT_ID) dc ON dc.shipment_id = s.shipment_id
-GROUP BY o.order_id, o.date_created, s.shipment_number, cc.cc_type, s.settled, (CASE WHEN SRC.ID = 16
+GROUP BY o.order_id, o.date_created, s.shipment_number, s.shipment_id, s.tracking_num, cc.cc_type, s.settled, (CASE WHEN SRC.ID = 16
   THEN translate(s.auth_code, 'INT', 'FAC')
                                                                                 WHEN SRC.ID = 17
                                                                                   THEN '[INL]'
